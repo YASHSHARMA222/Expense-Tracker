@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Spending or income category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "type": { "type": "string", "enum": ["expense", "income"] }
+      },
+      "required": ["name", "icon", "color", "type"]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "Financial account or wallet",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["bank", "card", "cash", "wallet"] },
+        "balance": { "type": "number" },
+        "color": { "type": "string" },
+        "lastFour": { "type": "string" }
+      },
+      "required": ["name", "type", "balance", "color"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Income or expense record",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "categoryId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["expense", "income"] },
+        "isRecurring": { "type": "boolean" }
+      },
+      "required": ["amount", "categoryId", "accountId", "date", "description", "type"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Monthly or weekly budget limit",
+      "type": "object",
+      "properties": {
+        "categoryId": { "type": "string" },
+        "limit": { "type": "number" },
+        "period": { "type": "string", "enum": ["monthly", "weekly"] }
+      },
+      "required": ["categoryId", "limit", "period"]
+    },
+    "RecurringTransaction": {
+      "title": "Recurring Transaction",
+      "description": "Scheduled income or expense",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "categoryId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["expense", "income"] },
+        "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "nextExecutionDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "categoryId", "accountId", "description", "type", "frequency", "startDate", "nextExecutionDate"]
+    },
+    "Investment": {
+      "title": "Investment",
+      "description": "One-time investment record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "accountId": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["name", "type", "amount", "date", "accountId"]
+    },
+    "RecurringInvestment": {
+      "title": "Recurring Investment",
+      "description": "Scheduled investment (SIP)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+        "accountId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "nextExecutionDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "amount", "frequency", "accountId", "startDate", "nextExecutionDate"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "User preferences",
+      "type": "object",
+      "properties": {
+        "currency": { "type": "string" },
+        "theme": { "type": "string", "enum": ["dark", "light"] }
+      },
+      "required": ["currency", "theme"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/categories": {
+      "schema": "Category",
+      "description": "User categories"
+    },
+    "users/{userId}/accounts": {
+      "schema": "Account",
+      "description": "User accounts"
+    },
+    "users/{userId}/transactions": {
+      "schema": "Transaction",
+      "description": "User transactions"
+    },
+    "users/{userId}/budgets": {
+      "schema": "Budget",
+      "description": "User budgets"
+    },
+    "users/{userId}/recurringTransactions": {
+      "schema": "RecurringTransaction",
+      "description": "User recurring transactions"
+    },
+    "users/{userId}/investments": {
+      "schema": "Investment",
+      "description": "User investments"
+    },
+    "users/{userId}/recurringInvestments": {
+      "schema": "RecurringInvestment",
+      "description": "User recurring investments"
+    },
+    "users/{userId}/settings": {
+      "schema": "Settings",
+      "description": "User settings"
+    }
+  }
+}

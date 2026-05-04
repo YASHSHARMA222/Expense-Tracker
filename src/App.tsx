@@ -15,14 +15,28 @@ import { RecurringManager } from './components/RecurringManager';
 import { SIPManager } from './components/SIPManager';
 import { InvestmentTracker } from './components/InvestmentTracker';
 import { EntryModal } from './components/EntryModal';
-import { StoreProvider } from './store/StoreContext';
-import { Wallet, PieChart, Repeat, Tag, ShieldAlert, Menu } from 'lucide-react';
+import { LandingPage } from './components/LandingPage';
+import { StoreProvider, useStore } from './store/StoreContext';
+import { Wallet, PieChart, Repeat, Tag, ShieldAlert, Menu, Loader2 } from 'lucide-react';
 
 const AppContent = () => {
+  const { user, authLoading } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<any>(null);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LandingPage />;
+  }
 
   const handleEdit = (tx: any) => {
     setEditingTx(tx);
@@ -99,6 +113,7 @@ const AppContent = () => {
     </div>
   );
 };
+
 
 const PlaceholderTab = ({ name }: { name: string }) => {
   const icons: Record<string, any> = {

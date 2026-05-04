@@ -1,0 +1,172 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Helpers
+    function isValidCategory(data) {
+      return data.keys().hasAll(['name', 'icon', 'color', 'type']) &&
+             data.keys().size() == 4 &&
+             data.name is string && data.name.size() <= 50 &&
+             data.icon is string && data.icon.size() <= 50 &&
+             data.color is string && data.color.size() <= 20 &&
+             data.type in ['expense', 'income'];
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll(['name', 'type', 'balance', 'color']) &&
+             (data.keys().size() == 4 || (data.keys().size() == 5 && data.keys().hasAll(['lastFour']))) &&
+             data.name is string && data.name.size() <= 50 &&
+             data.type in ['bank', 'card', 'cash', 'wallet'] &&
+             data.balance is number &&
+             data.color is string && data.color.size() <= 20 &&
+             (!('lastFour' in data) || (data.lastFour is string && data.lastFour.size() == 4));
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['amount', 'categoryId', 'accountId', 'date', 'description', 'type']) &&
+             (data.keys().size() == 6 || (data.keys().size() == 7 && data.keys().hasAll(['isRecurring']))) &&
+             data.amount is number && data.amount >= 0 &&
+             data.categoryId is string &&
+             data.accountId is string &&
+             data.date is string &&
+             data.description is string && data.description.size() <= 200 &&
+             data.type in ['expense', 'income'] &&
+             (!('isRecurring' in data) || data.isRecurring is bool);
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['categoryId', 'limit', 'period']) &&
+             data.keys().size() == 3 &&
+             data.categoryId is string &&
+             data.limit is number && data.limit >= 0 &&
+             data.period in ['monthly', 'weekly'];
+    }
+
+    function isValidRecurringTransaction(data) {
+      return data.keys().hasAll(['amount', 'categoryId', 'accountId', 'description', 'type', 'frequency', 'startDate', 'nextExecutionDate']) &&
+             data.keys().size() == 8 &&
+             data.amount is number && data.amount >= 0 &&
+             data.categoryId is string &&
+             data.accountId is string &&
+             data.description is string && data.description.size() <= 200 &&
+             data.type in ['expense', 'income'] &&
+             data.frequency in ['daily', 'weekly', 'monthly', 'yearly'] &&
+             data.startDate is string &&
+             data.nextExecutionDate is string;
+    }
+
+    function isValidInvestment(data) {
+      return data.keys().hasAll(['name', 'type', 'amount', 'date', 'accountId']) &&
+             (data.keys().size() == 5 || (data.keys().size() == 6 && data.keys().hasAll(['notes']))) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.type is string &&
+             data.amount is number && data.amount >= 0 &&
+             data.date is string &&
+             data.accountId is string &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidRecurringInvestment(data) {
+      return data.keys().hasAll(['name', 'type', 'amount', 'frequency', 'accountId', 'startDate', 'nextExecutionDate']) &&
+             data.keys().size() == 7 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.type is string &&
+             data.amount is number && data.amount >= 0 &&
+             data.frequency in ['daily', 'weekly', 'monthly', 'yearly'] &&
+             data.accountId is string &&
+             data.startDate is string &&
+             data.nextExecutionDate is string;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['currency', 'theme']) &&
+             data.keys().size() == 2 &&
+             data.currency is string && data.currency.size() <= 10 &&
+             data.theme in ['dark', 'light'];
+    }
+
+    // User Data Path
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /categories/{categoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(categoryId) && isValidCategory(incoming());
+        allow update: if isOwner(userId) && isValidCategory(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /accounts/{accountId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(accountId) && isValidAccount(incoming());
+        allow update: if isOwner(userId) && isValidAccount(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(transactionId) && isValidTransaction(incoming());
+        allow update: if isOwner(userId) && isValidTransaction(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /budgets/{budgetId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(budgetId) && isValidBudget(incoming());
+        allow update: if isOwner(userId) && isValidBudget(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /recurringTransactions/{rtId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(rtId) && isValidRecurringTransaction(incoming());
+        allow update: if isOwner(userId) && isValidRecurringTransaction(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /investments/{investmentId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(investmentId) && isValidInvestment(incoming());
+        allow update: if isOwner(userId) && isValidInvestment(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /recurringInvestments/{riId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(riId) && isValidRecurringInvestment(incoming());
+        allow update: if isOwner(userId) && isValidRecurringInvestment(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /settings/{configId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidSettings(incoming());
+      }
+    }
+  }
+}

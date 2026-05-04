@@ -11,11 +11,12 @@ import { InvestmentType } from '../types';
 interface SIPModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialData?: any;
 }
 
-export const SIPModal: React.FC<SIPModalProps> = ({ isOpen, onClose }) => {
-  const { addRecurringInvestment, accounts } = useStore();
-  const [formData, setFormData] = useState({
+export const SIPModal: React.FC<SIPModalProps> = ({ isOpen, onClose, initialData }) => {
+  const { addRecurringInvestment, updateRecurringInvestment, accounts } = useStore();
+  const [formData, setFormData] = React.useState({
     name: '',
     type: 'mutual_funds' as InvestmentType,
     amount: '',
@@ -24,6 +25,28 @@ export const SIPModal: React.FC<SIPModalProps> = ({ isOpen, onClose }) => {
     accountId: accounts[0]?.id || '',
   });
 
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name,
+        type: initialData.type,
+        amount: initialData.amount.toString(),
+        frequency: initialData.frequency,
+        startDate: new Date(initialData.startDate).toISOString().split('T')[0],
+        accountId: initialData.accountId,
+      });
+    } else {
+      setFormData({
+        name: '',
+        type: 'mutual_funds',
+        amount: '',
+        frequency: 'monthly',
+        startDate: new Date().toISOString().split('T')[0],
+        accountId: accounts[0]?.id || '',
+      });
+    }
+  }, [initialData, accounts, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,15 +54,21 @@ export const SIPModal: React.FC<SIPModalProps> = ({ isOpen, onClose }) => {
     const amountNum = parseFloat(formData.amount);
     if (isNaN(amountNum)) return;
 
-    addRecurringInvestment({
+    const payload = {
       name: formData.name,
       type: formData.type,
       amount: amountNum,
       frequency: formData.frequency,
       accountId: formData.accountId,
       startDate: new Date(formData.startDate).toISOString(),
-      nextExecutionDate: new Date(formData.startDate).toISOString(),
-    });
+      nextExecutionDate: initialData ? initialData.nextExecutionDate : new Date(formData.startDate).toISOString(),
+    };
+
+    if (initialData?.id) {
+      updateRecurringInvestment(initialData.id, payload);
+    } else {
+      addRecurringInvestment(payload);
+    }
     onClose();
   };
 
@@ -66,7 +95,9 @@ export const SIPModal: React.FC<SIPModalProps> = ({ isOpen, onClose }) => {
       <div className="bg-[#141414] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="p-8 pb-0 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Setup SIP</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {initialData ? 'Update SIP' : 'Setup SIP'}
+            </h2>
             <p className="text-zinc-500 text-xs mt-1 font-medium italic">Systematic Investment Plan</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-zinc-500 hover:text-white transition-colors">
@@ -170,7 +201,7 @@ export const SIPModal: React.FC<SIPModalProps> = ({ isOpen, onClose }) => {
             className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold transition-all hover:bg-indigo-500 active:scale-[0.98] mt-4 shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
           >
             <Repeat className="w-5 h-5" />
-            Activate SIP
+            {initialData ? 'Update Plan' : 'Activate SIP'}
           </button>
         </form>
       </div>

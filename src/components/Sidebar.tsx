@@ -16,9 +16,12 @@ import {
   Tag,
   TrendingUp,
   Calendar,
-  X
+  X,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useStore } from '../store/StoreContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -40,6 +43,8 @@ const navItems = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClose, isOpen }) => {
+  const { user, logout } = useStore();
+
   return (
     <>
       {/* Overlay for mobile */}
@@ -61,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
               <Wallet className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-white tracking-tight leading-none">Ledger</span>
+              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">Ledger</span>
               <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mt-1">Control Room</span>
             </div>
           </div>
@@ -80,32 +85,58 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
                 setActiveTab(item.id);
                 if (onClose) onClose();
               }}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium",
-              activeTab === item.id 
-                ? "bg-[#1a1a1a] text-white shadow-sm" 
-                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-            )}
-          >
-            <item.icon className={cn(
-              "w-5 h-5",
-              activeTab === item.id ? "text-blue-500" : "text-zinc-600 group-hover:text-zinc-400"
-            )} />
-            {item.label}
-          </button>
-        ))}
-      </nav>
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium",
+                activeTab === item.id 
+                  ? "bg-[#1a1a1a] text-white shadow-sm" 
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+              )}
+            >
+              <item.icon className={cn(
+                "w-5 h-5",
+                activeTab === item.id ? "text-blue-500" : "text-zinc-600 group-hover:text-zinc-400"
+              )} />
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-      <div className="p-4 border-t border-white/5 mt-auto">
-        <div className="p-4 rounded-2xl bg-[#141414] flex flex-col gap-1 border border-white/5">
-          <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">Global Currency</span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-sm font-semibold text-zinc-300">INR ₹</span>
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <div className="p-4 space-y-4 border-t border-white/5 mt-auto">
+          {user && (
+            <div className="p-4 rounded-2xl bg-[#141414] border border-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || 'User'} className="w-10 h-10 rounded-full border border-white/10" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-black text-white uppercase truncate leading-none">{user.displayName || 'Operator'}</span>
+                  <span className="text-[8px] text-zinc-600 truncate mt-1">{user.email}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => logout()}
+                className="w-full flex items-center justify-center gap-2 p-3 bg-red-500/10 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all active:scale-95"
+              >
+                <LogOut className="w-3 h-3" />
+                Dismount
+              </button>
+            </div>
+          )}
+
+          <div className="p-4 rounded-2xl bg-[#141414]/50 flex flex-col gap-1 border border-white/5">
+            <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">Global Status</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs font-semibold text-zinc-500 uppercase tracking-tighter">v2.0.4-STABLE</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
-  </>
-);
+      </aside>
+    </>
+  );
 };
+

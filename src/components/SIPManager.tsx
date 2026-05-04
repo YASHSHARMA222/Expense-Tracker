@@ -12,7 +12,8 @@ import {
   Wallet,
   TrendingUp,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Edit2
 } from 'lucide-react';
 import { useStore } from '../store/StoreContext';
 import { formatCurrency, cn } from '../lib/utils';
@@ -21,6 +22,17 @@ import { SIPModal } from './SIPModal';
 export const SIPManager: React.FC = () => {
   const { recurringInvestments = [], deleteRecurringInvestment } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSIP, setEditingSIP] = useState<any>(null);
+
+  const handleEdit = (si: any) => {
+    setEditingSIP(si);
+    setIsModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    setEditingSIP(null);
+  };
 
   const typeLabels: Record<string, string> = {
     equities: 'Stocks',
@@ -70,12 +82,20 @@ export const SIPManager: React.FC = () => {
               )}>
                 <Repeat className="w-6 h-6" />
               </div>
-              <button 
-                onClick={() => deleteRecurringInvestment(si.id)}
-                className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <button 
+                  onClick={() => handleEdit(si)}
+                  className="p-2 hover:bg-blue-500/10 rounded-lg text-zinc-700 hover:text-blue-500 transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => deleteRecurringInvestment(si.id)}
+                  className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-700 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -131,7 +151,8 @@ export const SIPManager: React.FC = () => {
 
       <SIPModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleClose}
+        initialData={editingSIP}
       />
     </div>
   );

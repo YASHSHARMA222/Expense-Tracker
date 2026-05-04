@@ -10,30 +10,27 @@ import {
   Repeat, 
   ArrowRight,
   Calendar,
-  Clock
+  Clock,
+  Edit2
 } from 'lucide-react';
 import { useStore } from '../store/StoreContext';
 import { formatCurrency, cn } from '../lib/utils';
 import { format } from 'date-fns';
+import { RecurringModal } from './RecurringModal';
 
 export const RecurringManager: React.FC = () => {
-  const { recurringTransactions = [], categories = [], accounts = [], addRecurringTransaction, deleteRecurringTransaction } = useStore();
-  const [isAdding, setIsAdding] = useState(false);
-  const [newRT, setNewRT] = useState({
-    amount: 0,
-    description: '',
-    categoryId: categories[0]?.id || '',
-    accountId: accounts[0]?.id || '',
-    type: 'expense' as const,
-    frequency: 'monthly' as const,
-    startDate: format(new Date(), 'yyyy-MM-dd'),
-    nextExecutionDate: format(new Date(), 'yyyy-MM-dd')
-  });
+  const { recurringTransactions = [], categories = [], accounts = [], deleteRecurringTransaction } = useStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRT, setEditingRT] = useState<any>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addRecurringTransaction(newRT);
-    setIsAdding(false);
+  const handleEdit = (rt: any) => {
+    setEditingRT(rt);
+    setIsModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    setEditingRT(null);
   };
 
   return (
@@ -43,60 +40,14 @@ export const RecurringManager: React.FC = () => {
           <span className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] ml-1">Automation</span>
           <h1 className="text-4xl font-black text-white tracking-tighter mt-2">Recurring Items</h1>
         </div>
-        {!isAdding && (
-          <button 
-            onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98]"
-          >
-            <Plus className="w-5 h-5" />
-            Add Schedule
-          </button>
-        )}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98]"
+        >
+          <Plus className="w-5 h-5" />
+          Add Schedule
+        </button>
       </div>
-
-      {isAdding && (
-        <form onSubmit={handleSubmit} className="bg-[#141414] p-8 rounded-[2rem] border border-white/5 animate-in slide-in-from-top-4 duration-500 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Amount</label>
-              <input
-                type="number"
-                required
-                value={newRT.amount}
-                onChange={e => setNewRT(p => ({ ...p, amount: parseFloat(e.target.value) }))}
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white focus:outline-none focus:border-blue-600"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Frequency</label>
-              <select
-                value={newRT.frequency}
-                onChange={e => setNewRT(p => ({ ...p, frequency: e.target.value as any }))}
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white appearance-none focus:outline-none focus:border-blue-600"
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Description</label>
-              <input
-                required
-                value={newRT.description}
-                onChange={e => setNewRT(p => ({ ...p, description: e.target.value }))}
-                placeholder="Netflix, Gym, Rent..."
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white focus:outline-none focus:border-blue-600"
-              />
-            </div>
-          </div>
-          <div className="flex gap-4 justify-end">
-            <button type="button" onClick={() => setIsAdding(false)} className="px-6 py-3 font-bold text-zinc-500 hover:text-white transition-colors">Cancel</button>
-            <button type="submit" className="w-full sm:w-auto bg-white text-black px-10 py-4 rounded-2xl font-black transition-all hover:bg-zinc-200 active:scale-[0.98] shadow-xl shadow-white/5">Start Schedule</button>
-          </div>
-        </form>
-      )}
 
       {/* Desktop Table */}
       <div className="hidden lg:block bg-[#141414] rounded-3xl border border-white/5 overflow-hidden">
@@ -138,12 +89,20 @@ export const RecurringManager: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <button 
-                    onClick={() => deleteRecurringTransaction(rt.id)}
-                    className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-zinc-600 hover:text-red-500 rounded-lg transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEdit(rt)}
+                      className="p-2 hover:bg-blue-500/10 text-zinc-600 hover:text-blue-500 rounded-lg transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => deleteRecurringTransaction(rt.id)}
+                      className="p-2 hover:bg-red-500/10 text-zinc-600 hover:text-red-500 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -172,12 +131,20 @@ export const RecurringManager: React.FC = () => {
                 <Calendar className="w-3.5 h-3.5 text-zinc-600" />
                 <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Next: {format(new Date(rt.nextExecutionDate), 'MMM dd')}</span>
               </div>
-              <button 
-                onClick={() => deleteRecurringTransaction(rt.id)}
-                className="p-3 bg-red-500/10 rounded-xl text-red-500 active:scale-95 transition-transform"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handleEdit(rt)}
+                  className="p-3 bg-white/5 rounded-xl text-zinc-400 active:scale-95 transition-transform"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => deleteRecurringTransaction(rt.id)}
+                  className="p-3 bg-red-500/10 rounded-xl text-red-500 active:scale-95 transition-transform"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -188,6 +155,13 @@ export const RecurringManager: React.FC = () => {
           <p className="text-xs uppercase tracking-widest font-black opacity-30">No recurring items</p>
         </div>
       )}
+
+      <RecurringModal 
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        initialData={editingRT}
+      />
     </div>
   );
 };
+

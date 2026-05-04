@@ -11,11 +11,12 @@ import { InvestmentType } from '../types';
 interface InvestmentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialData?: any;
 }
 
-export const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) => {
-  const { addInvestment, accounts } = useStore();
-  const [formData, setFormData] = useState({
+export const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, initialData }) => {
+  const { addInvestment, updateInvestment, accounts } = useStore();
+  const [formData, setFormData] = React.useState({
     name: '',
     type: 'mutual_funds' as InvestmentType,
     amount: '',
@@ -24,24 +25,44 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClos
     notes: ''
   });
 
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name,
+        type: initialData.type,
+        amount: initialData.amount.toString(),
+        date: new Date(initialData.date).toISOString().split('T')[0],
+        accountId: initialData.accountId,
+        notes: initialData.notes || ''
+      });
+    } else {
+      setFormData({
+        name: '',
+        type: 'mutual_funds',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        accountId: accounts[0]?.id || '',
+        notes: ''
+      });
+    }
+  }, [initialData, accounts, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addInvestment({
+    const payload = {
       ...formData,
       amount: parseFloat(formData.amount),
       date: new Date(formData.date).toISOString()
-    });
+    };
+
+    if (initialData?.id) {
+      updateInvestment(initialData.id, payload);
+    } else {
+      addInvestment(payload);
+    }
     onClose();
-    setFormData({
-      name: '',
-      type: 'mutual_funds',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      accountId: accounts[0]?.id || '',
-      notes: ''
-    });
   };
 
   const types: { value: InvestmentType; label: string }[] = [
@@ -59,7 +80,9 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClos
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-[#141414] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="p-8 pb-0 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white tracking-tight">Add Investment</h2>
+          <h2 className="text-2xl font-bold text-white tracking-tight">
+            {initialData ? 'Update Asset' : 'Add Investment'}
+          </h2>
           <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-zinc-500 hover:text-white transition-colors">
             <X className="w-6 h-6" />
           </button>

@@ -16,23 +16,21 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store/StoreContext';
 import { formatCurrency, cn } from '../lib/utils';
+import { AccountModal } from './AccountModal';
 
 export const AccountManager: React.FC = () => {
-  const { accounts, addAccount, updateAccount, deleteAccount } = useStore();
-  const [isAdding, setIsAdding] = useState(false);
-  const [newAccount, setNewAccount] = useState({
-    name: '',
-    type: 'bank' as const,
-    balance: 0,
-    color: '#3b82f6',
-    lastFour: ''
-  });
+  const { accounts, deleteAccount } = useStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addAccount(newAccount);
-    setIsAdding(false);
-    setNewAccount({ name: '', type: 'bank', balance: 0, color: '#3b82f6', lastFour: '' });
+  const handleEdit = (acc: any) => {
+    setEditingAccount(acc);
+    setIsModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    setEditingAccount(null);
   };
 
   const getIcon = (type: string) => {
@@ -52,79 +50,14 @@ export const AccountManager: React.FC = () => {
           <span className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] ml-1">Liquid Assets</span>
           <h1 className="text-4xl font-black text-white tracking-tighter mt-2">Accounts</h1>
         </div>
-        {!isAdding && (
-          <button 
-            onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-xl shadow-blue-600/20"
-          >
-            <Plus className="w-5 h-5" />
-            Add Account
-          </button>
-        )}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-xl shadow-blue-600/20"
+        >
+          <Plus className="w-5 h-5" />
+          Add Account
+        </button>
       </div>
-
-      {isAdding && (
-        <form onSubmit={handleSubmit} className="bg-[#141414] p-8 rounded-[2rem] border border-white/5 animate-in slide-in-from-top-4 duration-500 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Account Name</label>
-              <input
-                required
-                value={newAccount.name}
-                onChange={e => setNewAccount(p => ({ ...p, name: e.target.value }))}
-                placeholder="HDFC Bank, Amex..."
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white focus:outline-none focus:border-blue-600 transition-all placeholder:text-zinc-800"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Type</label>
-              <select
-                value={newAccount.type}
-                onChange={e => setNewAccount(p => ({ ...p, type: e.target.value as any }))}
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white appearance-none focus:outline-none focus:border-blue-600"
-              >
-                <option value="bank">Bank Account</option>
-                <option value="card">Credit Card</option>
-                <option value="cash">Physical Cash</option>
-                <option value="wallet">Digital Wallet</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Initial Balance</label>
-              <input
-                type="number"
-                value={newAccount.balance}
-                onChange={e => setNewAccount(p => ({ ...p, balance: parseFloat(e.target.value) }))}
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white focus:outline-none focus:border-blue-600"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest ml-1">Last 4 Digits</label>
-              <input
-                value={newAccount.lastFour}
-                onChange={e => setNewAccount(p => ({ ...p, lastFour: e.target.value }))}
-                placeholder="Optional"
-                className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white focus:outline-none focus:border-blue-600 transition-all placeholder:text-zinc-800"
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <button 
-              type="button" 
-              onClick={() => setIsAdding(false)}
-              className="px-6 py-3 rounded-xl font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit"
-              className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-all active:scale-95"
-            >
-              Create Account
-            </button>
-          </div>
-        </form>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map((acc) => {
@@ -143,7 +76,10 @@ export const AccountManager: React.FC = () => {
                     <Icon className="w-6 h-6" />
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-2 hover:bg-white/5 rounded-lg text-zinc-600 hover:text-zinc-400">
+                    <button 
+                      onClick={() => handleEdit(acc)}
+                      className="p-2 hover:bg-white/5 rounded-lg text-zinc-600 hover:text-white transition-colors"
+                    >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
@@ -183,6 +119,13 @@ export const AccountManager: React.FC = () => {
           );
         })}
       </div>
+
+      <AccountModal 
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        initialData={editingAccount}
+      />
     </div>
   );
 };
+

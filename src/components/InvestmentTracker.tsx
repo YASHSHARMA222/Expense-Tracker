@@ -10,6 +10,7 @@ import {
   PieChart, 
   ArrowUpRight, 
   Trash2, 
+  Edit2,
   Briefcase,
   AlertCircle,
   Clock,
@@ -22,6 +23,17 @@ import { InvestmentModal } from './InvestmentModal';
 export const InvestmentTracker: React.FC = () => {
   const { investments = [], deleteInvestment } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingInvestment, setEditingInvestment] = useState<any>(null);
+
+  const handleEdit = (inv: any) => {
+    setEditingInvestment(inv);
+    setIsModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    setEditingInvestment(null);
+  };
 
   const stats = useMemo(() => {
     const total = investments.reduce((acc, curr) => acc + curr.amount, 0);
@@ -135,14 +147,22 @@ export const InvestmentTracker: React.FC = () => {
                   "w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110",
                   typeColors[inv.type] || "bg-zinc-600"
                 )}>
-                  <Briefcase className="w-6 h-6" />
+                  <ArrowUpRight className="w-6 h-6" />
                 </div>
-                <button 
-                  onClick={() => deleteInvestment(inv.id)}
-                  className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                  <button 
+                    onClick={() => handleEdit(inv)}
+                    className="p-2 hover:bg-blue-500/10 rounded-lg text-zinc-700 hover:text-blue-500 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => deleteInvestment(inv.id)}
+                    className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-700 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               <div className="space-y-4">
                 <div>
@@ -180,7 +200,8 @@ export const InvestmentTracker: React.FC = () => {
 
       <InvestmentModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleClose}
+        initialData={editingInvestment}
       />
     </div>
   );
