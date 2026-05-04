@@ -1,0 +1,5 @@
+{
+	"appId": "com.ledger.app",
+	"appName": "Ledger",
+	"webDir": "dist"
+}
