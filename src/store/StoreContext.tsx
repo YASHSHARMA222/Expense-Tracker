@@ -8,7 +8,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { query } from 'firebase/firestore';
 import { AppData, Transaction, Account, Budget, RecurringTransaction, Category, Investment, RecurringInvestment, Currency } from '../types';
 import { generateId } from '../lib/utils';
-import { auth, signInWithGoogle, signInWithGithub, signInWithApple, signOut } from '../lib/firebase';
+import { auth, signInWithGoogle, signInWithGithub, signInWithApple, signUpWithEmail, logInWithEmail, updateUserProfile, signOut } from '../lib/firebase';
 import { firebaseService } from '../services/firebaseService';
 
 interface StoreContextType extends AppData {
@@ -17,6 +17,8 @@ interface StoreContextType extends AppData {
   isLoggingIn: boolean;
   loginError: string | null;
   login: (provider?: 'google' | 'github' | 'apple') => Promise<void>;
+  signUp: (email: string, pass: string, name: string) => Promise<void>;
+  logIn: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   updateTransaction: (id: string, tx: Partial<Transaction>) => Promise<void>;
@@ -123,18 +125,53 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       else if (provider === 'github') await signInWithGithub();
       else if (provider === 'apple') await signInWithApple();
     } catch (error: any) {
-      console.error('Login failed:', error);
-      if (error.code === 'auth/popup-closed-by-user') {
-        setLoginError('Login window was closed. Please complete the sign-in.');
-      } else if (error.code === 'auth/popup-blocked') {
-        setLoginError('Popup was blocked. Please allow popups for this site.');
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        // Silently ignore as another popup is already handling this
-      } else {
-        setLoginError('Authentication failed. Please try again.');
-      }
+      handleAuthError(error);
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const signUp = async (email: string, pass: string, name: string) => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    setLoginError(null);
+    try {
+      await signUpWithEmail(email, pass);
+      await updateUserProfile(name);
+    } catch (error: any) {
+      handleAuthError(error);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const logIn = async (email: string, pass: string) => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    setLoginError(null);
+    try {
+      await logInWithEmail(email, pass);
+    } catch (error: any) {
+      handleAuthError(error);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleAuthError = (error: any) => {
+    console.error('Auth error:', error);
+    if (error.code === 'auth/popup-closed-by-user') {
+      setLoginError('Login window was closed. Please complete the sign-in.');
+    } else if (error.code === 'auth/popup-blocked') {
+      setLoginError('Popup was blocked. Please allow popups for this site.');
+    } else if (error.code === 'auth/email-already-in-use') {
+      setLoginError('This email is already registered.');
+    } else if (error.code === 'auth/weak-password') {
+      setLoginError('Password should be at least 6 characters.');
+    } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      setLoginError('Invalid email or password.');
+    } else {
+      setLoginError('Authentication failed. Please check your network or Firebase settings.');
     }
   };
 
@@ -444,6 +481,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     isLoggingIn,
     loginError,
     login,
+    signUp,
+    logIn,
     logout,
     addTransaction,
     updateTransaction,
