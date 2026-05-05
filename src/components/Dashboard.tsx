@@ -114,7 +114,7 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-6">
         <StatCard 
           label="Net Worth" 
           value={netWorth} 
@@ -154,7 +154,7 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
           label="Avg / Day" 
           value={averageDailySpend} 
           icon={<TrendingUp className="w-5 h-5" />} 
-          subtitle="This month"
+          subtitle="This month spend"
           trend={null}
         />
       </div>
@@ -275,19 +275,13 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
 };
 
 const StatCard = ({ label, value, icon, subtitle, trend }: any) => (
-  <div className="bg-[#141414] p-7 rounded-3xl border border-white/5 shadow-xl group hover:border-white/10 transition-all duration-300 relative overflow-hidden">
-    <div className="flex items-start justify-between relative z-10">
-      <div className="space-y-4">
-        <div>
-          <span className="text-[10px] text-zinc-600 uppercase font-black tracking-[0.15em]">{label}</span>
-          <div className="flex items-baseline gap-1 mt-2">
-            <h3 className="text-3xl font-bold text-white tracking-tighter">{formatCurrency(value)}</h3>
-          </div>
-        </div>
-        <p className="text-xs text-zinc-500 font-medium">{subtitle}</p>
+  <div className="bg-[#141414] p-6 rounded-3xl border border-white/5 shadow-xl group hover:border-white/10 transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[160px]">
+    <div className="flex items-start justify-between relative z-10 w-full">
+      <div className="space-y-1">
+        <span className="text-[10px] text-zinc-600 uppercase font-black tracking-[0.15em] block">{label}</span>
       </div>
       <div className={cn(
-        "p-3 rounded-2xl transition-transform group-hover:scale-110 duration-500",
+        "p-2.5 rounded-xl transition-transform group-hover:scale-110 duration-500",
         trend === 'income' ? "bg-green-500/10 text-green-500" : 
         trend === 'expense' ? "bg-red-500/10 text-red-500" :
         "bg-blue-500/10 text-blue-500"
@@ -295,6 +289,16 @@ const StatCard = ({ label, value, icon, subtitle, trend }: any) => (
         {icon}
       </div>
     </div>
+
+    <div className="relative z-10 mt-auto">
+      <div className="flex items-baseline gap-1">
+        <h3 className="text-2xl lg:text-3xl font-bold text-white tracking-tighter whitespace-nowrap overflow-hidden text-ellipsis">
+          {formatCurrency(value)}
+        </h3>
+      </div>
+      <p className="text-[10px] lg:text-xs text-zinc-500 font-medium mt-1 truncate">{subtitle}</p>
+    </div>
+
     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[80px] -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-colors duration-700" />
   </div>
 );
