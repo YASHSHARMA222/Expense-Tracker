@@ -4,10 +4,17 @@ import { Wallet, Shield, Zap, Globe, ArrowRight, BarChart3, PieChart, Lock, Load
 import { useStore } from '../store/StoreContext';
 
 export const LandingPage: React.FC = () => {
-  const { login, signUp, logIn, isLoggingIn, loginError } = useStore();
+  const { login, signUp, logIn, isLoggingIn, loginError, clearError } = useStore();
   const [authMode, setAuthMode] = useState<'social' | 'login' | 'signup'>('social');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
+
+  React.useEffect(() => {
+    if (loginError) {
+      const timer = setTimeout(() => clearError(), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [loginError, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,8 +26,14 @@ export const LandingPage: React.FC = () => {
   };
 
   const openAuth = (mode: 'login' | 'signup' | 'social') => {
+    clearError();
     setAuthMode(mode);
     setShowModal(true);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    clearError();
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const containerVariants = {
@@ -98,6 +111,19 @@ export const LandingPage: React.FC = () => {
                 </button>
               </div>
 
+              {loginError && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mb-6 overflow-hidden"
+                >
+                  <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span className="text-[10px] font-bold text-red-100 uppercase tracking-widest">{loginError}</span>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Social Options */}
               <div className="grid grid-cols-3 gap-3 mb-8">
                 <button 
@@ -144,7 +170,7 @@ export const LandingPage: React.FC = () => {
                       placeholder="OPERATOR NAME"
                       className="w-full bg-[#050505] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold uppercase tracking-wider focus:border-blue-500/50 outline-none transition-colors"
                       value={formData.name}
-                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={e => handleInputChange('name', e.target.value)}
                     />
                   </div>
                 )}
@@ -156,7 +182,7 @@ export const LandingPage: React.FC = () => {
                     placeholder="COMM-LINK EMAIL"
                     className="w-full bg-[#050505] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold uppercase tracking-wider focus:border-blue-500/50 outline-none transition-colors"
                     value={formData.email}
-                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={e => handleInputChange('email', e.target.value)}
                   />
                 </div>
                 <div className="relative">
@@ -167,7 +193,7 @@ export const LandingPage: React.FC = () => {
                     placeholder="SECURITY KEY"
                     className="w-full bg-[#050505] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold uppercase tracking-wider focus:border-blue-500/50 outline-none transition-colors"
                     value={formData.password}
-                    onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    onChange={e => handleInputChange('password', e.target.value)}
                   />
                 </div>
 
@@ -186,7 +212,10 @@ export const LandingPage: React.FC = () => {
 
               <div className="mt-8 pt-6 border-t border-white/5 text-center">
                 <button 
-                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                  onClick={() => {
+                    clearError();
+                    setAuthMode(authMode === 'login' ? 'signup' : 'login');
+                  }}
                   className="text-zinc-600 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors"
                 >
                   {authMode === 'login' ? "Don't have a unit? Create one" : "Already an operator? Log in"}
@@ -197,10 +226,10 @@ export const LandingPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Error Message */}
-      {loginError && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 duration-500">
-          <div className="bg-red-500/10 border border-red-500/20 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl shadow-red-500/10">
+      {/* Error Message - Only show if modal is NOT open */}
+      {loginError && !showModal && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 duration-500" onClick={clearError}>
+          <div className="bg-red-500/10 border border-red-500/20 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl shadow-red-500/10 cursor-pointer hover:bg-red-500/20">
             <AlertCircle className="w-5 h-5 text-red-500" />
             <span className="text-xs font-bold text-red-100 uppercase tracking-widest">{loginError}</span>
           </div>

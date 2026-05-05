@@ -9,6 +9,7 @@ import { query } from 'firebase/firestore';
 import { AppData, Transaction, Account, Budget, RecurringTransaction, Category, Investment, RecurringInvestment, Currency } from '../types';
 import { generateId } from '../lib/utils';
 import { auth, signInWithGoogle, signInWithGithub, signInWithApple, signUpWithEmail, logInWithEmail, updateUserProfile, signOut } from '../lib/firebase';
+import firebaseConfig from '../../firebase-applet-config.json';
 import { firebaseService } from '../services/firebaseService';
 
 interface StoreContextType extends AppData {
@@ -16,6 +17,7 @@ interface StoreContextType extends AppData {
   authLoading: boolean;
   isLoggingIn: boolean;
   loginError: string | null;
+  clearError: () => void;
   login: (provider?: 'google' | 'github' | 'apple') => Promise<void>;
   signUp: (email: string, pass: string, name: string) => Promise<void>;
   logIn: (email: string, pass: string) => Promise<void>;
@@ -65,6 +67,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [data, setData] = useState<AppData>(initialData);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  const clearError = () => setLoginError(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -170,6 +174,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setLoginError('Password should be at least 6 characters.');
     } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       setLoginError('Invalid email or password.');
+    } else if (error.code === 'auth/unauthorized-domain') {
+      setLoginError('This domain is not authorized. Please add your shared app URL to Authorized Domains in Firebase Console.');
+    } else if (error.code === 'auth/operation-not-allowed') {
+      const consoleUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
+      setLoginError(`Sign-in method disabled. Enable Email, Google, etc. at: ${consoleUrl}`);
     } else {
       setLoginError('Authentication failed. Please check your network or Firebase settings.');
     }
@@ -480,6 +489,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     authLoading,
     isLoggingIn,
     loginError,
+    clearError,
     login,
     signUp,
     logIn,
