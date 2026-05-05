@@ -8,13 +8,15 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { query } from 'firebase/firestore';
 import { AppData, Transaction, Account, Budget, RecurringTransaction, Category, Investment, RecurringInvestment, Currency } from '../types';
 import { generateId } from '../lib/utils';
-import { auth, signInWithGoogle, signOut } from '../lib/firebase';
+import { auth, signInWithGoogle, signInWithGithub, signInWithApple, signOut } from '../lib/firebase';
 import { firebaseService } from '../services/firebaseService';
 
 interface StoreContextType extends AppData {
   user: User | null;
   authLoading: boolean;
-  login: () => Promise<void>;
+  isLoggingIn: boolean;
+  loginError: string | null;
+  login: (provider?: 'google' | 'github' | 'apple') => Promise<void>;
   logout: () => Promise<void>;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   updateTransaction: (id: string, tx: Partial<Transaction>) => Promise<void>;
@@ -59,6 +61,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [data, setData] = useState<AppData>(initialData);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -110,11 +114,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => unsubscribes.forEach(unsub => unsub());
   }, [user]);
 
-  const login = async () => {
+  const login = async (provider: 'google' | 'github' | 'apple' = 'google') => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    setLoginError(null);
     try {
-      await signInWithGoogle();
-    } catch (error) {
+      if (provider === 'google') await signInWithGoogle();
+      else if (provider === 'github') await signInWithGithub();
+      else if (provider === 'apple') await signInWithApple();
+    } catch (error: any) {
       console.error('Login failed:', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        setLoginError('Login window was closed. Please complete the sign-in.');
+      } else if (error.code === 'auth/popup-blocked') {
+        setLoginError('Popup was blocked. Please allow popups for this site.');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        // Silently ignore as another popup is already handling this
+      } else {
+        setLoginError('Authentication failed. Please try again.');
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -421,6 +441,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ...data,
     user,
     authLoading,
+    isLoggingIn,
+    loginError,
     login,
     logout,
     addTransaction,
