@@ -38,7 +38,7 @@ export const BudgetManager: React.FC = () => {
         .filter(t => t.categoryId === b.categoryId && t.type === 'expense' && new Date(t.date) >= start)
         .reduce((acc, curr) => acc + curr.amount, 0);
       const category = categories.find(c => c.id === b.categoryId);
-      const rawPercent = (spent / b.limit) * 100;
+      const rawPercent = b.limit > 0 ? (spent / b.limit) * 100 : (spent > 0 ? 100 : 0);
       return { ...b, spent, category, rawPercent, percent: Math.min(100, rawPercent) };
     });
   }, [budgets, transactions, categories]);
@@ -82,8 +82,11 @@ export const BudgetManager: React.FC = () => {
               <input
                 type="number"
                 required
-                value={newBudget.limit}
-                onChange={e => setNewBudget(p => ({ ...p, limit: parseFloat(e.target.value) }))}
+                value={isNaN(newBudget.limit) ? '' : newBudget.limit}
+                onChange={e => {
+                  const val = parseFloat(e.target.value);
+                  setNewBudget(p => ({ ...p, limit: isNaN(val) ? 0 : val }));
+                }}
                 className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-white focus:outline-none focus:border-blue-600"
               />
             </div>

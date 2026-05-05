@@ -29,11 +29,19 @@ import { formatCurrency, cn } from '../lib/utils';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, subMonths, isSameDay, isSameMonth } from 'date-fns';
 
 export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) => {
-  const { transactions = [], accounts = [], categories = [] } = useStore();
+  const { transactions = [], accounts = [], categories = [], investments = [] } = useStore();
 
-  const totalBalance = useMemo(() => 
+  const totalAccountBalance = useMemo(() => 
     accounts.reduce((acc, curr) => acc + curr.balance, 0), 
   [accounts]);
+
+  const totalInvestmentBalance = useMemo(() => 
+    investments.reduce((acc, curr) => acc + curr.amount, 0),
+  [investments]);
+
+  const netWorth = useMemo(() => 
+    totalAccountBalance + totalInvestmentBalance,
+  [totalAccountBalance, totalInvestmentBalance]);
 
   const monthlySpent = useMemo(() => {
     const start = startOfMonth(new Date());
@@ -55,7 +63,7 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
     const start = startOfMonth(new Date());
     const today = new Date();
     const daysPassed = Math.max(1, today.getDate());
-    return monthlySpent / daysPassed;
+    return (daysPassed > 0 ? monthlySpent / daysPassed : 0) || 0;
   }, [monthlySpent]);
 
   const chartData = useMemo(() => {
@@ -84,7 +92,7 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
     return Object.entries(catMap)
       .map(([id, amount]) => ({
         name: categories.find(c => c.id === id)?.name || 'Other',
-        value: amount,
+        value: amount || 0,
         color: categories.find(c => c.id === id)?.color || '#6b7280'
       }))
       .sort((a, b) => b.value - a.value);
@@ -106,19 +114,33 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         <StatCard 
-          label="Total Balance" 
-          value={totalBalance} 
-          icon={<Wallet className="w-5 h-5" />} 
-          subtitle={`Across ${accounts.length} accounts`}
+          label="Net Worth" 
+          value={netWorth} 
+          icon={<TrendingUp className="w-5 h-5" />} 
+          subtitle="Total Financial Power"
           trend={null}
+        />
+        <StatCard 
+          label="Cash Balance" 
+          value={totalAccountBalance} 
+          icon={<Wallet className="w-5 h-5" />} 
+          subtitle={`${accounts.length} Accounts`}
+          trend={null}
+        />
+        <StatCard 
+          label="Invested Value" 
+          value={totalInvestmentBalance} 
+          icon={<TrendingUp className="w-5 h-5" />} 
+          subtitle={`${investments.length} Active Investments`}
+          trend="income"
         />
         <StatCard 
           label="This Month Spent" 
           value={monthlySpent} 
           icon={<ArrowDownRight className="w-5 h-5" />} 
-          subtitle={`${transactions.filter(t => isSameMonth(new Date(t.date), new Date())).length} transactions`}
+          subtitle={`${transactions.filter(t => isSameMonth(new Date(t.date), new Date())).length} txns`}
           trend="expense"
         />
         <StatCard 

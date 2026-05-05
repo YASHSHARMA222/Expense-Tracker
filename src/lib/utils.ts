@@ -110,11 +110,12 @@ export const saveData = (data: AppData) => {
 };
 
 export const formatCurrency = (amount: number, currency: string = 'INR') => {
+  const safeAmount = isNaN(amount) || amount === undefined || amount === null ? 0 : amount;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: currency,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safeAmount);
 };
 
 export const generateId = () => uuidv4();

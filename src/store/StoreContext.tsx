@@ -8,7 +8,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { query } from 'firebase/firestore';
 import { AppData, Transaction, Account, Budget, RecurringTransaction, Category, Investment, RecurringInvestment, Currency } from '../types';
 import { generateId } from '../lib/utils';
-import { auth, signInWithGoogle, signInWithGithub, signInWithApple, signUpWithEmail, logInWithEmail, updateUserProfile, signOut } from '../lib/firebase';
+import { auth, signInWithGoogle, signInWithGithub, signInWithApple, signUpWithEmail, logInWithEmail, updateUserProfile, sendVerification, signOut } from '../lib/firebase';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { firebaseService } from '../services/firebaseService';
 
@@ -18,6 +18,7 @@ interface StoreContextType extends AppData {
   isLoggingIn: boolean;
   loginError: string | null;
   clearError: () => void;
+  sendVerificationEmail: () => Promise<void>;
   login: (provider?: 'google' | 'github' | 'apple') => Promise<void>;
   signUp: (email: string, pass: string, name: string) => Promise<void>;
   logIn: (email: string, pass: string) => Promise<void>;
@@ -69,6 +70,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const clearError = () => setLoginError(null);
+
+  const sendVerificationEmail = async () => {
+    try {
+      await sendVerification();
+      setLoginError('Verification email sent. Please check your inbox.');
+    } catch (error: any) {
+      console.error('Failed to send verification email:', error);
+      setLoginError('Could not send verification email. Try again later.');
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -179,6 +190,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else if (error.code === 'auth/operation-not-allowed') {
       const consoleUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
       setLoginError(`Sign-in method disabled. Enable Email, Google, etc. at: ${consoleUrl}`);
+    } else if (error.message?.includes('insufficient permissions') || error.code === 'permission-denied') {
+      if (auth.currentUser && !auth.currentUser.emailVerified) {
+        setLoginError('Write access denied. Please verify your email address to continue or use Google/GitHub sign-in.');
+      } else {
+        setLoginError('Permission denied. Please ensure your account has proper access.');
+      }
     } else {
       setLoginError('Authentication failed. Please check your network or Firebase settings.');
     }
@@ -490,6 +507,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     isLoggingIn,
     loginError,
     clearError,
+    sendVerificationEmail,
     login,
     signUp,
     logIn,

@@ -11,6 +11,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider in ['google.com', 'github.com', 'apple.com']);
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -29,8 +33,9 @@ service cloud.firestore {
 
     // Validation Helpers
     function isValidCategory(data) {
-      return data.keys().hasAll(['name', 'icon', 'color', 'type']) &&
-             data.keys().size() == 4 &&
+      return data.keys().hasAll(['id', 'name', 'icon', 'color', 'type']) &&
+             data.keys().size() == 5 &&
+             data.id is string &&
              data.name is string && data.name.size() <= 50 &&
              data.icon is string && data.icon.size() <= 50 &&
              data.color is string && data.color.size() <= 20 &&
@@ -38,18 +43,20 @@ service cloud.firestore {
     }
 
     function isValidAccount(data) {
-      return data.keys().hasAll(['name', 'type', 'balance', 'color']) &&
-             (data.keys().size() == 4 || (data.keys().size() == 5 && data.keys().hasAll(['lastFour']))) &&
+      return data.keys().hasAll(['id', 'name', 'type', 'balance', 'color']) &&
+             (data.keys().size() == 5 || (data.keys().size() == 6 && data.keys().hasAll(['lastFour']))) &&
+             data.id is string &&
              data.name is string && data.name.size() <= 50 &&
              data.type in ['bank', 'card', 'cash', 'wallet'] &&
              data.balance is number &&
              data.color is string && data.color.size() <= 20 &&
-             (!('lastFour' in data) || (data.lastFour is string && data.lastFour.size() == 4));
+             (!('lastFour' in data) || (data.lastFour is string && data.lastFour.size() <= 4));
     }
 
     function isValidTransaction(data) {
-      return data.keys().hasAll(['amount', 'categoryId', 'accountId', 'date', 'description', 'type']) &&
-             (data.keys().size() == 6 || (data.keys().size() == 7 && data.keys().hasAll(['isRecurring']))) &&
+      return data.keys().hasAll(['id', 'amount', 'categoryId', 'accountId', 'date', 'description', 'type']) &&
+             (data.keys().size() == 7 || (data.keys().size() == 8 && data.keys().hasAll(['isRecurring']))) &&
+             data.id is string &&
              data.amount is number && data.amount >= 0 &&
              data.categoryId is string &&
              data.accountId is string &&
@@ -60,16 +67,18 @@ service cloud.firestore {
     }
 
     function isValidBudget(data) {
-      return data.keys().hasAll(['categoryId', 'limit', 'period']) &&
-             data.keys().size() == 3 &&
+      return data.keys().hasAll(['id', 'categoryId', 'limit', 'period']) &&
+             data.keys().size() == 4 &&
+             data.id is string &&
              data.categoryId is string &&
              data.limit is number && data.limit >= 0 &&
              data.period in ['monthly', 'weekly'];
     }
 
     function isValidRecurringTransaction(data) {
-      return data.keys().hasAll(['amount', 'categoryId', 'accountId', 'description', 'type', 'frequency', 'startDate', 'nextExecutionDate']) &&
-             data.keys().size() == 8 &&
+      return data.keys().hasAll(['id', 'amount', 'categoryId', 'accountId', 'description', 'type', 'frequency', 'startDate', 'nextExecutionDate']) &&
+             data.keys().size() == 9 &&
+             data.id is string &&
              data.amount is number && data.amount >= 0 &&
              data.categoryId is string &&
              data.accountId is string &&
@@ -81,8 +90,9 @@ service cloud.firestore {
     }
 
     function isValidInvestment(data) {
-      return data.keys().hasAll(['name', 'type', 'amount', 'date', 'accountId']) &&
-             (data.keys().size() == 5 || (data.keys().size() == 6 && data.keys().hasAll(['notes']))) &&
+      return data.keys().hasAll(['id', 'name', 'type', 'amount', 'date', 'accountId']) &&
+             (data.keys().size() == 6 || (data.keys().size() == 7 && data.keys().hasAll(['notes']))) &&
+             data.id is string &&
              data.name is string && data.name.size() <= 100 &&
              data.type is string &&
              data.amount is number && data.amount >= 0 &&
@@ -92,8 +102,9 @@ service cloud.firestore {
     }
 
     function isValidRecurringInvestment(data) {
-      return data.keys().hasAll(['name', 'type', 'amount', 'frequency', 'accountId', 'startDate', 'nextExecutionDate']) &&
-             data.keys().size() == 7 &&
+      return data.keys().hasAll(['id', 'name', 'type', 'amount', 'frequency', 'accountId', 'startDate', 'nextExecutionDate']) &&
+             data.keys().size() == 8 &&
+             data.id is string &&
              data.name is string && data.name.size() <= 100 &&
              data.type is string &&
              data.amount is number && data.amount >= 0 &&

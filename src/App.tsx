@@ -20,7 +20,7 @@ import { StoreProvider, useStore } from './store/StoreContext';
 import { Wallet, PieChart, Repeat, Tag, ShieldAlert, Menu, Loader2 } from 'lucide-react';
 
 const AppContent = () => {
-  const { user, authLoading } = useStore();
+  const { user, authLoading, sendVerificationEmail } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -82,6 +82,23 @@ const AppContent = () => {
         onClose={() => setIsSidebarOpen(false)} 
       />
       <main className="flex-1 p-4 md:p-10 max-w-[1500px] mx-auto w-full overflow-x-hidden">
+        {user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && (
+          <div className="mb-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="w-5 h-5 text-amber-500" />
+              <div className="text-zinc-300 text-xs font-medium">
+                Your email is not verified. Some advanced security features are restricted.
+              </div>
+            </div>
+            <button 
+              onClick={() => sendVerificationEmail()}
+              className="px-4 py-2 bg-amber-500/20 text-amber-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/30 transition-colors shrink-0"
+            >
+              Send Verification Link
+            </button>
+          </div>
+        )}
+
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between mb-8 pb-4 border-b border-white/5">
           <div className="flex items-center gap-3">

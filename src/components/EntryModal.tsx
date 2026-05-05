@@ -55,9 +55,10 @@ export const EntryModal: React.FC<EntryModalProps> = ({ isOpen, onClose, initial
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const amount = parseFloat(formData.amount);
     const payload = {
       ...formData,
-      amount: parseFloat(formData.amount),
+      amount: isNaN(amount) ? 0 : amount,
     };
 
     if (initialData?.id) {

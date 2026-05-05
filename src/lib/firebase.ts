@@ -7,7 +7,8 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -29,5 +30,6 @@ export const signInWithApple = () => signInWithPopup(auth, appleProvider);
 export const signUpWithEmail = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
 export const logInWithEmail = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
 export const updateUserProfile = (name: string) => auth.currentUser ? updateProfile(auth.currentUser, { displayName: name }) : Promise.resolve();
+export const sendVerification = () => auth.currentUser ? sendEmailVerification(auth.currentUser) : Promise.resolve();
 
 export const signOut = () => auth.signOut();
