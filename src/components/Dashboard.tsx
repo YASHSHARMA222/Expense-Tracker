@@ -114,7 +114,7 @@ export const Dashboard: React.FC<{ onAddEntry: () => void }> = ({ onAddEntry }) 
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           label="Net Worth" 
           value={netWorth} 
@@ -292,11 +292,11 @@ const StatCard = ({ label, value, icon, subtitle, trend }: any) => (
 
     <div className="relative z-10 mt-auto">
       <div className="flex items-baseline gap-1">
-        <h3 className="text-2xl lg:text-3xl font-bold text-white tracking-tighter whitespace-nowrap overflow-hidden text-ellipsis">
+        <h3 className="text-3xl lg:text-4xl font-black text-white tracking-tighter">
           {formatCurrency(value)}
         </h3>
       </div>
-      <p className="text-[10px] lg:text-xs text-zinc-500 font-medium mt-1 truncate">{subtitle}</p>
+      <p className="text-xs text-zinc-500 font-medium mt-1 truncate">{subtitle}</p>
     </div>
 
     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[80px] -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-colors duration-700" />
