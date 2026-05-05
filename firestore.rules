@@ -121,9 +121,21 @@ service cloud.firestore {
              data.theme in ['dark', 'light'];
     }
 
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'createdAt']) &&
+             data.keys().size() <= 6 &&
+             data.email is string &&
+             data.createdAt is string &&
+             (!('displayName' in data) || data.displayName is string) &&
+             (!('photoURL' in data) || data.photoURL is string) &&
+             (!('lastSeen' in data) || data.lastSeen is string);
+    }
+
     // User Data Path
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming());
 
       match /categories/{categoryId} {
         allow read: if isOwner(userId);

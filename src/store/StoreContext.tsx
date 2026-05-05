@@ -70,6 +70,29 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const clearError = () => setLoginError(null);
+  const syncUser = useCallback(async (u: User) => {
+    try {
+      // Sync profile
+      await firebaseService.set('users', u.uid, {
+        email: u.email || '',
+        displayName: u.displayName || '',
+        photoURL: u.photoURL || '',
+        createdAt: u.metadata.creationTime ? new Date(u.metadata.creationTime).toISOString() : new Date().toISOString(),
+        lastSeen: new Date().toISOString()
+      });
+
+      // Ensure settings exist
+      const settings = await firebaseService.list(`users/${u.uid}/settings`);
+      if (settings.length === 0) {
+        await firebaseService.set(`users/${u.uid}/settings`, 'default', {
+          currency: 'INR',
+          theme: 'dark'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to sync user profile or settings:', error);
+    }
+  }, []);
 
   const sendVerificationEmail = async () => {
     try {
@@ -85,9 +108,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
+      if (u) {
+        syncUser(u);
+      }
     });
     return unsubscribe;
-  }, []);
+  }, [syncUser]);
 
   // Subscriptions
   useEffect(() => {
